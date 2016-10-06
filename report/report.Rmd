@@ -1,0 +1,120 @@
+---
+title: "Simple Regression Analysis"
+author: "Dakota Lim"
+header-includes:
+   \usepackage{mathtools}
+date: "October 5, 2016"
+output: 
+  pdf_document: 
+    fig_caption: yes
+---
+
+```{r, echo = F, warning = F}
+# require xtable
+#install.packages("xtable")
+library(xtable)
+
+# prepare data
+data = read.csv("../data/Advertising.csv")
+data = data[,2:5]
+
+# separate data
+Tv = data[,1]
+Radio = data[,2]
+Newspaper = data[,3]
+Sales = data[,4]
+
+# load model and get summary object
+load(file = "../data/regression.RData")
+```
+
+#Abstract
+In the following report we wil preform a basic linear regression to explain how well one data set predicts a corresponding set. In particular, we will reproduce the work done in sections 3.1 of *Simple Linear Regression}* using the exact same data sets and producing some of the same graphics.
+
+#Introduction
+The goal of this paper is to advise retailers on how to spend their advertising money amongst the available media outlets. We will do this by regressing the relative ammount of money spent on advertising on the total sales, determining if there is some relationship, and determine the strength of the relationship. Using this information we can provide statistically supported advise to the retailer.
+
+#Data
+The data in question is the Advertising data set found at `http://www-bcf.usc.edu/~gareth/ISL/Advertising.csv`. The data has a total of 200 observation in four variables: **Tv**, **Radio**, **Newspaper**, and **Sales**. The **Sales** data is given in thousands of units, and all other data is given in thousands of dollars spent.
+
+#Methodology
+In this paper we will only consider the **Tv** data and its influence on **Sales**. The methods used can easilly be extended to other variables if desired.
+To describe the relationship we first consider a basic scatterplot of **Tv** against **Sales**:
+
+```{r scatterplot, fig.width = 8, fig.height = 3.5, echo = F, fig.cap="Tv vs Sales Scatterplot"}
+plot(x = Tv, y =  Sales, col = "Red", pch = 16, cex = .75)
+```
+
+There appears to be a linear relationship between **Tv** and **Sales**, as **Tv** increases **Sales** tends to as well. Thus, we decide on the following linear model:
+$$ Y = X*\beta $$
+With $Y \coloneqq \bold{Sales}$ and $X \coloneqq \bold{Tv}$. Upon fitting the model to our data we well be able to solve for the optimal $\beta$. Recall that in linear regression the objective function is to minimize the following following L2 norm over all possible $\beta$ values:
+$$ \lVert Y - X\beta \rVert_{2} $$
+Some basic matrix algebra gives the following optimal value of $\beta$ given some $Y$ and $X$ data matricies:
+$$ \hat{\beta}_{OLS} \coloneqq (X^{T}X)^{-1}X^{T}Y $$
+
+Next we consider the Residual Standard Error, or RSE. The RSE is considered a measure of "lack of fit", meaning it measures how poorly a model fits the data. We define RSE as follows:
+$$ RSE \coloneqq \sqrt{\dfrac{1}{n-2}\sum_{i=1}^{n} (Y_{i} - \hat{Y}_{i})} $$
+Thus, we may think of RSE as the average deviation from the OLS prediction.
+
+We will also consider the $R^{2}$ statistic to help determine the strength of the correlation between our variables, $R^{2}$ is given by:
+$$ R^{2} \coloneqq \dfrac{TSS - RSS}{TSS} = 1 - \dfrac{RSS}{TSS} $$
+$$ RSS \coloneqq \sum_{i=1}^{n} (Y_{i} - \hat{Y}_{i})^{2} $$
+$$ TSS \coloneqq \sum_{i=1}^{n} (Y_{i} - \bar{Y})^{2} $$
+Thus, we may think of $R^{2}$ as a proportion of explained variance : total variance.
+
+Finally we consider the F-statistic, which can be used to determine if our model has excess regressors. The F test uses the following hypothesis:
+$$ H_{0} : \beta = 0$$
+$$ H_{1} : \beta \neq 0$$
+
+#Results
+Once we loaded and prepared the data we observed the following values relating to $\hat{\beta}$ in Table 1:
+
+```{r xtable, results="asis", echo = F}
+options(xtable.comment = F)
+t1 = xtable(model, caption = "Regressor Analytics")
+print.xtable(t1, type ="latex")
+```
+
+and recorded statistics relating to the overall model in Table 2 on the following page.
+
+We note that Pr(>|t|) is so small that it is rounded down to 0, implying the **intercept** and **Tv** regressors both contribute significantly in the prediction of **Sales**, which in turn tells us to keep both in the model. To further support this we note the large t-scores for each regressor, implying they are significant to the model.
+
+Next we look at the actual values and interpret them. The intercept ($\hat{\beta}_{0}$) is 7.0326, this can be interpreted as the total **Sales** if no money is spent on **Tv**. The Tv value ($\hat{\beta}_{1}$) is .0475, this can be interpreted as the unit of **Sales** increase per one unit increase in **Tv**. Note Table 1 also provides standard errors, allowing us to (if we wish) produce ($100 * \alpha$)% confidence intervals of the form:
+$$ \hat{\beta}_{i} \pm t_{n-2}(\dfrac{\alpha}{2})* Std.\ Error_{i} $$
+
+Now we consider the information in Table 2.
+
+```{r, results="asis", echo = F}
+#get desired model statistics (TSS, RSS, RSE, R^2, FStat)
+options(xtable.comment = F)
+RSS = sum(residuals(model)^2)
+MSE = RSS/200
+RSE = sqrt(RSS/model$df.residual)
+R2 = summary$r.squared
+FStat = summary$fstatistic
+modelAnalytics = data.frame(Statistics = c("RSS", "MSE", "RSE", "R2", "FStat"), 
+                            Values = c(RSS, MSE, RSE, R2, as.numeric(FStat["value"])))
+t2 = xtable(modelAnalytics, caption = "Model Analytics")
+print.xtable(t2, type ="latex")
+```
+
+The RSS gave a value of 2102.53, which is not too helpful in judging the models performance. The MSE was only 10.51, which has a direct interpretation as the average of the squares of the errors given by our model.
+
+The RSE gave a value of 3.26, as described in the **Methodology** section this is interpreted as a measure of 'lack of fit'. A relatively small RSE, like 3.26, implies that our model is fitting the data relatively well.
+
+The $R^{2}$ statistic is described in the **Methodology** section as well. Noting that the value is .61 for this particular model, it is safe to say **Tv** has a positive correlation with **Sales**, albeit not a perfect correlation but a clear correlation none the les.
+
+Recall the FStat tells us the probability our model contains excess regressors. In our model the we have an F-Statistic with (1, 198) degrees of freedom and a value of 312.14. Using this information we can use the F-Statistic table (an online tool can be found here: `http://stattrek.com/online-calculator/f-distribution.aspx`) to see that we would reject $H_{0}\ \forall \ \alpha > 1.525879e-05$.
+
+#Conclusions
+Using the information discussed in **Results** and **Methodology**, we have sufficient evidence to support the conclusion that spending more money on **Tv** results in an increase in **Sales**.
+By viewing the scatterplot shown in Figure 1 with the Least Squares line superimposed on it we can clearly see that this claim holds:
+![Scatterplot with Least Squares Line](../images/scatterplot-tv-sales.png)
+In conclusion, we advise retailers to use the following equation to estimate **Sales**:
+**Sales** = 7.0326 + .0475***Tv**
+
+To further elaborate, we expect a increase of .0475 thousand units sold for every 1 thousand dollars spend on Tv advertising. Note these results were calculated without considering any kinds of external influences, one off events, or other regressors.
+
+Similarly, we would advise retailers to be aware of the RSE. The RSE is informing us that, on average, our predictions for **Sales** are 3.26 thousand units sold off their true value.
+
+

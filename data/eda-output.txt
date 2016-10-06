@@ -1,0 +1,6 @@
+[1] "Tv"
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+   0.70   74.38  149.80  147.00  218.80  296.40 
+[1] "Sales"
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+   1.60   10.38   12.90   14.02   17.40   27.00 
